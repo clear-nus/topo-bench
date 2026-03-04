@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOPO-Bench: An Open-Source Topological Mapping Evaluation Framework</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .author-link { color: #2563eb; text-decoration: none; }
+        .author-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 antialiased">
+
+    <header class="bg-white shadow-sm py-12 px-4 mb-8">
+        <div class="max-w-4xl mx-auto text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight">
+                TOPO-Bench: An Open-Source Topological Mapping Evaluation Framework with Quantifiable Perceptual Aliasing
+            </h1>
+            <div class="text-lg text-gray-700 mb-4">
+                <span class="mr-3"><a href="https://jiaming.im/" class="author-link">Jiaming Wang</a><sup>1*</sup></span>
+                <span class="mr-3">Jizhuo Chen<sup>1</sup></span>
+                <span class="mr-3">Diwen Liu<sup>1</sup></span>
+                <span class="mr-3">Jiaxuan Da<sup>1</sup></span><br class="hidden md:block">
+                <span class="mr-3">Jiamo Hu<sup>1</sup></span>
+                <span class="mr-3">Zhiwei Xue<sup>1</sup></span>
+                <span class="mr-3">Linh Kästner<sup>1</sup></span>
+                <span class="mr-3"><a href="https://haroldsoh.com/" class="author-link">Harold Soh</a><sup>1,2*</sup></span>
+            </div>
+            <div class="text-sm text-gray-500 mb-6">
+                <p><sup>1</sup>School of Computing, National University of Singapore</p>
+                <p><sup>2</sup>Smart Systems Institute, National University of Singapore</p>
+                <p class="mt-2 text-xs">*Corresponding authors: {jiaming, harold}@comp.nus.edu.sg</p>
+            </div>
+            
+            <div class="flex justify-center space-x-4">
+                <a href="https://arxiv.org/html/2510.04100v1" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-full transition duration-300">Paper (PDF)</a>
+                <a href="#" class="bg-gray-400 text-white font-semibold py-2 px-6 rounded-full cursor-default">Code (Coming Soon)</a>
+                <a href="#" class="bg-gray-400 text-white font-semibold py-2 px-6 rounded-full cursor-default">Dataset (Coming Soon)</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 pb-16 space-y-12">
+
+        <section class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4 border-b pb-2">Overview Video</h2>
+            <div class="rounded-lg overflow-hidden">
+                <video class="w-full" controls>
+                    <source src="topo_bench_icra_short.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+        </section>
+
+        <section class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4 border-b pb-2">Abstract</h2>
+            <p class="text-gray-700 leading-relaxed text-justify">
+                Topological mapping offers a compact and robust representation for navigation, but progress in the field is hindered by the lack of standardized evaluation metrics, datasets, and protocols. Existing systems are assessed using different environments and criteria, preventing fair and reproducible comparisons. Moreover, a key challenge—perceptual aliasing—remains under-quantified, despite its strong influence on system performance. We address these gaps by (i) formalizing <em>topological consistency</em> as the fundamental property of topological maps and showing that localization accuracy provides an efficient and interpretable surrogate metric, and (ii) proposing the first quantitative measure of dataset ambiguity to enable fair comparisons across environments. To support this protocol, we curate a diverse benchmark dataset with calibrated ambiguity levels, implement and release deep-learned baseline systems, and evaluate them alongside classical methods. Our experiments and analysis yield new insights into the limitations of current approaches under perceptual aliasing. All datasets, baselines, and evaluation tools are fully open-sourced to foster consistent and reproducible research in topological mapping.
+            </p>
+        </section>
+
+        <section class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4 border-b pb-2">
+                Formal Proof: Localization Infers Map Success
+            </h2>
+
+            <div class="prose max-w-none text-gray-700">
+                <h3 class="text-xl font-semibold mb-2">Definitions and Assumptions</h3>
+                <p>
+                Let \(\mathcal{G}_t = (\mathcal{V}_t, \mathcal{E}_t)\) be the topological graph at time \(t\).
+                </p>
+                <p>
+                Let \(\mathrm{dist}_G(u, v)\) denote the shortest-path hop distance between nodes \(u\) and \(v\) in the graph.
+                </p>
+                <p>
+                Let \(\mathrm{dist}_R(u, v)\) denote the geodesic route distance between the physical locations of nodes \(u\) and \(v\) in the environment.
+                </p>
+
+                <p class="mt-4">
+                We operate under an <strong>edge-length regular policy</strong> \(P\): every edge that is ever added to the graph (whether a consecutive edge or a shortcut edge created upon a revisit) has route length bounded by
+                \[
+                    \mathrm{dist}_R(u,v) \le \kappa \mu_e,
+                \]
+                for some constant \(\kappa \ge 1\) and a fixed characteristic edge length \(\mu_e>0\) (e.g., the median edge length under \(P\) at the evaluation scale).
+                </p>
+
+                <p>
+                We define the hop budget as \(n = \max(1, \lfloor \epsilon d / \mu_e \rfloor)\), where \(d\) is the physical route distance threshold and \(\epsilon \le 1/\kappa\). Consequently,
+                \[
+                    n \kappa \mu_e \le \left( \frac{\epsilon d}{\mu_e} \right) \kappa \mu_e = \epsilon \kappa d \le d.
+                \]
+                </p>
+
+                <p class="mt-4">
+                <strong>Policy-conditioned edge opportunities.</strong> Let \(\Omega_P(d)\) denote the set of node pairs that the update policy \(P\) may consider connecting (at threshold \(d\)) as an edge opportunity. Concretely, at each timestep, this includes the single proposed match \((v_i, v_j)\) in the accept case, or the consecutive pair \((v_i, u)\) in the reject case, as dictated by \(P\). This definition ensures that recall is evaluated only on edges the policy could have instantiated.
+                </p>
+
+                <p class="mt-4">
+                <strong>Localization Success</strong> is defined such that at every time \(t\), the system either:
+                </p>
+                <ol class="list-decimal pl-6 mb-4 space-y-1">
+                <li>
+                    Correctly accepts a revisit and retrieves a previously mapped node \(v_j\) corresponding to the true place being revisited (within the physical tolerance used by the evaluation), and adds an edge from the current node \(v_i\) to \(v_j\).
+                </li>
+                <li>
+                    Correctly rejects all prior nodes in a novel region, creates a new node, and connects it to the previous node by a consecutive edge.
+                </li>
+                </ol>
+
+                <div class="bg-gray-50 p-4 rounded-md border-l-4 border-blue-500 my-6">
+                <h3 class="text-lg font-bold text-gray-900 mb-1">Theorem</h3>
+                <p class="italic">
+                    If a topological mapping system makes correct localization decisions at every timestep \(t\), then for all \(t \ge 0\), the resulting map \(\mathcal{G}_t\) satisfies Edge Precision and Policy-conditioned Edge Recall at scale \((n,d)\).
+                </p>
+                </div>
+
+                <h3 class="text-xl font-semibold mt-6 mb-2">Proof by Mathematical Induction</h3>
+
+                <p>
+                <strong>Lemma (Hop-to-route bound):</strong>
+                For any nodes \(u,v\) in a graph whose edges all satisfy \(\mathrm{dist}_R(\cdot,\cdot)\le \kappa\mu_e\), if \(\mathrm{dist}_G(u,v)\le n\) then \(\mathrm{dist}_R(u,v)\le d\).
+                <br />
+                <strong>Proof:</strong> Let \(u=v_0, v_1, \dots, v_\ell=v\) be a shortest hop path with \(\ell \le n\). By edge-length regularity, \(\mathrm{dist}_R(v_{i-1},v_i)\le \kappa\mu_e\) for all \(i\). Concatenating these traversable routes yields a feasible route from \(u\) to \(v\) of length at most \(\sum_{i=1}^{\ell} \mathrm{dist}_R(v_{i-1},v_i) \le \ell \kappa\mu_e \le n\kappa\mu_e \le d\). Since \(\mathrm{dist}_R(u,v)\) is the shortest such route distance, \(\mathrm{dist}_R(u,v)\le d\). \(\square\)
+                </p>
+
+                <p>
+                <strong>Base Case (\(t=0\)):</strong>
+                <br />
+                At \(t=0\), the graph \(\mathcal{G}_0\) is either empty or contains a single node. There are no edges, and the maximum hop distance is 0. Both Edge Precision and Policy-conditioned Edge Recall hold vacuously.
+                </p>
+
+                <p class="mt-4">
+                <strong>Inductive Hypothesis:</strong>
+                <br />
+                Assume that at time \(t\), the graph \(\mathcal{G}_t\) satisfies both Edge Precision and Policy-conditioned Edge Recall at scale \((n, d)\).
+                </p>
+
+                <p class="mt-4">
+                <strong>Inductive Step (\(t \rightarrow t+1\)):</strong>
+                <br />
+                At time \(t+1\), the system receives a new observation \(z_{t+1}\) and updates the graph according to policy \(P\). By edge-length regularity, any new edge added at time \(t+1\) has route length at most \(\kappa\mu_e\). Because the system maintains correct localization, there are exactly two possible outcomes:
+                </p>
+
+                <p class="mt-4 text-gray-900 font-medium">Case 1: Correct Accept (Revisit)</p>
+                <p>
+                The system correctly retrieves a previously mapped node \(v_j \in \mathcal{V}_t\) and adds a new edge \(e_{\text{new}} = (v_i, v_j)\), where \(v_i\) is the current node.
+                </p>
+                <ul class="list-disc pl-6 mb-4 space-y-2">
+                <li>
+                    <em>Edge Precision:</em> Consider any two nodes \(u, v \in \mathcal{V}_{t+1}\) such that \(\mathrm{dist}_G(u, v) \le n\).
+                    <ul class="list-circle pl-6 mt-1">
+                    <li>
+                        Since \(\mathcal{G}_{t+1}\) is formed from \(\mathcal{G}_t\) by adding edges (and no edge in the entire history violates \(\mathrm{dist}_R \le \kappa\mu_e\)), the lemma applies directly to \(\mathcal{G}_{t+1}\). Hence \(\mathrm{dist}_R(u, v) \le d\).
+                    </li>
+                    <li>
+                        Equivalently, one may split into subcases: if a shortest \(u\)-to-\(v\) path does not use \(e_{\text{new}}\), the inductive hypothesis applies; if it uses \(e_{\text{new}}\), then the lemma bounds the route length by \(n\kappa\mu_e \le d\). In both subcases, \(\mathrm{dist}_R(u,v)\le d\).
+                    </li>
+                    </ul>
+                </li>
+                <li>
+                    <em>Policy-conditioned Edge Recall:</em> We must verify that for all policy-eligible pairs \((u, v) \in \Omega_P(d)\) with \(\mathrm{dist}_R(u, v) \le d\), the graph distance satisfies \(\mathrm{dist}_G(u, v) \le n\).
+                    <ul class="list-circle pl-6 mt-1">
+                    <li>
+                        All pairs in \(\Omega_P(d)\) that were already eligible at time \(t\) remain connected within \(\le n\) hops because adding edges cannot increase shortest-path hop distances.
+                    </li>
+                    <li>
+                        The newly instantiated policy-eligible opportunity at time \(t+1\) is the accepted pair \((v_i, v_j)\). Because the algorithm adds \(e_{\text{new}}\), \(\mathrm{dist}_G(v_i, v_j) = 1 \le n\), so recall holds for this new opportunity.
+                    </li>
+                    </ul>
+                </li>
+                </ul>
+
+                <p class="mt-4 text-gray-900 font-medium">Case 2: Correct Reject (Novel Region)</p>
+                <p>
+                The system correctly identifies the region as unmapped. It initializes a new node \(u \notin \mathcal{V}_t\) and connects it to the previous node \(v_i\) via a new edge \(e_{\text{new}} = (v_i, u)\).
+                </p>
+                <ul class="list-disc pl-6 mb-4 space-y-2">
+                <li>
+                    <em>Edge Precision:</em> Consider any \(u', v' \in \mathcal{V}_{t+1}\) with \(\mathrm{dist}_G(u', v') \le n\). As in Case 1, the lemma applies to \(\mathcal{G}_{t+1}\) because all edges (including the new edge) satisfy \(\mathrm{dist}_R \le \kappa\mu_e\). Hence \(\mathrm{dist}_R(u', v') \le d\).
+                </li>
+                <li>
+                    <em>Policy-conditioned Edge Recall:</em> All previously eligible pairs retain \(\le n\)-hop connectivity because hop distances among old nodes do not increase. The only newly instantiated policy-eligible opportunity involving the new node at time \(t+1\) is \((v_i, u)\), and it is directly connected: \(\mathrm{dist}_G(v_i, u) = 1 \le n\).
+                </li>
+                </ul>
+
+                <h3 class="text-xl font-semibold mt-6 mb-2">Discussion: Effect of Non-zero Localization Error</h3>
+
+                <p>
+                The theorem above should be interpreted as an <em>idealized invariance result</em>: if localization decisions are always correct, then the map maintains Edge Precision and Policy-conditioned Edge Recall as it grows. In practice, real systems have non-zero error, and thus the conclusion becomes <em>approximate</em> rather than absolute. The proof highlights which failure modes invalidate its assumptions and how they impact map quality.
+                </p>
+
+                <p class="mt-4">
+                <strong>Which assumption fails under error?</strong> The induction relies on the edge-length regularity condition that every added edge remains physically local (bounded by \(\kappa\mu_e\)). Consecutive edges created during exploration typically satisfy this automatically. However, an incorrect <em>accept</em> decision (a false loop closure) can add a shortcut edge between physically distant places, violating the bound. Once such a long-range spurious edge exists, the Hop-to-route lemma no longer applies, and Edge Precision can be broken immediately, since a 1-hop connection may exceed the route threshold \(d\).
+                </p>
+
+                <p class="mt-4">
+                <strong>Error asymmetry: false accept vs. false reject.</strong> Not all localization errors have the same structural consequences.
+                <em>False accepts</em> are catastrophic: they can introduce an incorrect shortcut that collapses hop distances between distant regions, corrupting the graph and potentially causing cascading failures in later updates.
+                In contrast, <em>false rejects</em> (missed revisits) usually create duplicate nodes connected by local consecutive edges; this tends to preserve Edge Precision but harms Policy-conditioned Edge Recall by missing policy-eligible revisit opportunities, leading to map fragmentation and reduced planning efficiency.
+                </p>
+
+                <p class="mt-4">
+                <strong>Implication for the surrogate relationship.</strong> Localization accuracy remains an informative surrogate for map success, but it is necessary to distinguish <em>where</em> the errors occur. In particular, the key requirement for preserving the theorem’s guarantees is the absence of catastrophic false accepts that violate edge-length regularity. This motivates our ambiguity-aware evaluation (A+P, P.O., A.O.): A.O. cases directly measure the propensity to incorrectly accept in novel regions, which is precisely the failure mode that can break the proof assumptions and corrupt the map. Conversely, high P.O. and A+P performance reflects the ability to correctly accept revisits without sacrificing safety.
+                </p>
+
+                <p class="mt-4">
+                <strong>Practical extension via edge gating.</strong> The invariance argument can be extended beyond the zero-error setting if the system enforces a physical consistency gate on accepted shortcut edges. If every accepted edge \((v_i,v_j)\) is required to satisfy
+                \[
+                    \mathrm{dist}_R(v_i,v_j)\le \kappa\mu_e
+                \]
+                (e.g., via odometry-based gating, temporal consistency checks, or multi-view verification), then the Hop-to-route lemma continues to hold and Edge Precision is preserved even with non-zero retrieval noise. Under such gating, residual errors primarily manifest as conservative rejects, which degrade recall but do not catastrophically corrupt the map.
+                </p>
+
+
+                <p class="mt-6 font-semibold">Conclusion:</p>
+                <p>
+                In both cases, Edge Precision and Policy-conditioned Edge Recall are preserved when passing from \(\mathcal{G}_t\) to \(\mathcal{G}_{t+1}\). Therefore, by mathematical induction, if localization decisions are correct at every timestep, the resulting map satisfies the two topological consistency properties for all \(t \ge 0\). \(\blacksquare\)
+                </p>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white border-t py-8 text-center text-gray-500 text-sm">
+        <p>&copy; 2026 TOPO-Bench Authors. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>
