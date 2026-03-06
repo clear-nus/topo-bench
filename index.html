@@ -314,29 +314,58 @@
             <h2 class="text-2xl font-bold text-gray-900 mb-4 border-b pb-2">Benchmarking Baselines</h2>
             <div class="prose max-w-none text-gray-700">
                 <p>
-                    We benchmark three baseline localization systems. The values below are the tuned settings used for <em>BLA</em><sub>max</sub> and <em>L</em><sub>A.O.</sub>@90.
+                    We benchmark three baseline localization systems. The values below are the tuned settings used for <em>BLA</em><sub>max</sub> and <em>L</em><sub>A.O.</sub>@90, rather than the raw script defaults.
                 </p>
 
                 <p class="mt-4">
                     <strong>Greedy Matching (GM).</strong>
                     The system selects the highest-similarity node and accepts it only when the score exceeds the threshold \(\tau\); otherwise it keeps the previous localization result unchanged.
-                    Used settings: <em>BLA</em><sub>max</sub>: \(\tau = 0.5\); <em>L</em><sub>A.O.</sub>@90: \(\tau = 0.65\).
                 </p>
+                <div class="grid gap-3 md:grid-cols-2 not-prose">
+                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+                        <div class="font-semibold text-gray-900"><em>BLA</em><sub>max</sub></div>
+                        <div>\(\tau = 0.5\)</div>
+                    </div>
+                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+                        <div class="font-semibold text-gray-900"><em>L</em><sub>A.O.</sub>@90</div>
+                        <div>\(\tau = 0.65\)</div>
+                    </div>
+                </div>
 
                 <p class="mt-4">
                     <strong>Sequence Matching (SM).</strong>
                     The system scores each candidate using a temporal window and accepts the best candidate when the aggregated score exceeds \(\tau\).
                     In this implementation, the window is causal: it uses the current keyframe and the previous \(h\) keyframes, so the effective window length is \(h+1\).
                     We report two aggregation variants: <strong>SM-Med</strong> uses the median similarity over the window (<code>agg="median"</code>), while <strong>SM-All</strong> requires every frame in the window to individually exceed \(\tau\) and then averages those scores (<code>agg="all"</code>).
-                    Used settings: <em>BLA</em><sub>max</sub>: SM-Med \(h = 9, \tau = 0.5\); SM-All \(h = 9, \tau = 0.45\). <em>L</em><sub>A.O.</sub>@90: SM-Med \(h = 9, \tau = 0.6\); SM-All \(h = 9, \tau = 0.6\).
                 </p>
+                <div class="grid gap-3 md:grid-cols-2 not-prose">
+                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+                        <div class="font-semibold text-gray-900"><em>BLA</em><sub>max</sub></div>
+                        <div>SM-Med: \(h = 9, \tau = 0.5\)</div>
+                        <div>SM-All: \(h = 9, \tau = 0.45\)</div>
+                    </div>
+                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+                        <div class="font-semibold text-gray-900"><em>L</em><sub>A.O.</sub>@90</div>
+                        <div>SM-Med: \(h = 9, \tau = 0.6\)</div>
+                        <div>SM-All: \(h = 9, \tau = 0.6\)</div>
+                    </div>
+                </div>
 
                 <p class="mt-4">
                     <strong>Probabilistic Belief Update (PBU).</strong>
                     The system propagates a belief over map nodes using a hop-limited transition model, then updates that belief using similarity-based observation likelihoods.
                     Here, \(\tau\) is the observation threshold, \(w_u\) is the maximum hop movement per step, \(\alpha\) and \(\beta\) are the legal and illegal transition weights, \(\kappa\) scales the softmax likelihood sharpness, and \(\eta\) is the minimum posterior belief required to emit a localization.
-                    Used settings: <em>BLA</em><sub>max</sub>: \(\tau = 0.3\), \(w_u = 7\), \(\alpha = 1.0\), \(\beta = 10^{-6}\), \(\kappa = 15.0\), \(\eta = 0.3\). <em>L</em><sub>A.O.</sub>@90: \(\tau = 0.65\), \(w_u = 7\), \(\alpha = 1.0\), \(\beta = 10^{-6}\), \(\kappa = 15.0\), \(\eta = 0.3\).
                 </p>
+                <div class="grid gap-3 md:grid-cols-2 not-prose">
+                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+                        <div class="font-semibold text-gray-900"><em>BLA</em><sub>max</sub></div>
+                        <div>\(\tau = 0.3\), \(w_u = 7\), \(\alpha = 1.0\), \(\beta = 10^{-6}\), \(\kappa = 15.0\), \(\eta = 0.3\)</div>
+                    </div>
+                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+                        <div class="font-semibold text-gray-900"><em>L</em><sub>A.O.</sub>@90</div>
+                        <div>\(\tau = 0.65\), \(w_u = 7\), \(\alpha = 1.0\), \(\beta = 10^{-6}\), \(\kappa = 15.0\), \(\eta = 0.3\)</div>
+                    </div>
+                </div>
 
             </div>
         </section>
