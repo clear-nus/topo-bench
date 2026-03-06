@@ -69,155 +69,243 @@
 
             <div class="prose max-w-none text-gray-700">
                 <h3 class="text-xl font-semibold mb-2">Definitions and Assumptions</h3>
+
                 <p>
-                Let \(\mathcal{G}_t = (\mathcal{V}_t, \mathcal{E}_t)\) be the topological graph at time \(t\).
+                    Let \(\mathcal{G}_t = (\mathcal{V}_t, \mathcal{E}_t)\) be the topological graph after \(t\) updates.
                 </p>
                 <p>
-                Let \(\mathrm{dist}_G(u, v)\) denote the shortest-path hop distance between nodes \(u\) and \(v\) in the graph.
+                    Let \(\mathrm{dist}_{\mathcal{G}_t}(u, v)\) denote the shortest-path hop distance between nodes \(u\) and \(v\) in \(\mathcal{G}_t\).
                 </p>
                 <p>
-                Let \(\mathrm{dist}_R(u, v)\) denote the geodesic route distance between the physical locations of nodes \(u\) and \(v\) in the environment.
+                    Let \(\mathrm{dist}_R(u, v)\) denote the geodesic route distance between the physical locations represented by nodes \(u\) and \(v\).
                 </p>
 
                 <p class="mt-4">
-                We operate under an <strong>edge-length regular policy</strong> \(P\): every edge that is ever added to the graph (whether a consecutive edge or a shortcut edge created upon a revisit) has route length bounded by
-                \[
-                    \mathrm{dist}_R(u,v) \le \kappa \mu_e,
-                \]
-                for some constant \(\kappa \ge 1\) and a fixed characteristic edge length \(\mu_e>0\) (e.g., the median edge length under \(P\) at the evaluation scale).
-                </p>
-
-                <p>
-                We define the hop budget as \(n = \max(1, \lfloor \epsilon d / \mu_e \rfloor)\), where \(d\) is the physical route distance threshold and \(\epsilon \le 1/\kappa\). Consequently,
-                \[
-                    n \kappa \mu_e \le \left( \frac{\epsilon d}{\mu_e} \right) \kappa \mu_e = \epsilon \kappa d \le d.
-                \]
+                    We assume an <strong>additive update rule</strong>: the graph only grows over time,
+                    \[
+                        \mathcal{V}_t \subseteq \mathcal{V}_{t+1},
+                        \qquad
+                        \mathcal{E}_t \subseteq \mathcal{E}_{t+1}.
+                    \]
+                    That is, nodes and edges are only added, never deleted or rewired.
                 </p>
 
                 <p class="mt-4">
-                <strong>Policy-conditioned edge opportunities.</strong> Let \(\Omega_P(d)\) denote the set of node pairs that the update policy \(P\) may consider connecting (at threshold \(d\)) as an edge opportunity. Concretely, at each timestep, this includes the single proposed match \((v_i, v_j)\) in the accept case, or the consecutive pair \((v_i, u)\) in the reject case, as dictated by \(P\). This definition ensures that recall is evaluated only on edges the policy could have instantiated.
+                    We also assume an <strong>edge-length regular policy</strong> \(P\): every edge \((x,y)\) ever added to the graph
+                    (whether a consecutive edge or a shortcut edge created upon a revisit) satisfies
+                    \[
+                        \mathrm{dist}_R(x,y) \le \kappa \mu_e,
+                    \]
+                    for some constants \(\kappa \ge 1\) and \(\mu_e > 0\).
                 </p>
 
                 <p class="mt-4">
-                <strong>Localization Success</strong> is defined such that at every time \(t\), the system either:
+                    Fix a physical route-distance threshold \(d > 0\). We choose an integer hop budget \(n \ge 1\) such that
+                    \[
+                        n \kappa \mu_e \le d.
+                    \]
+                    A convenient admissible choice is
+                    \[
+                        n := \left\lfloor \frac{d}{\kappa \mu_e} \right\rfloor,
+                    \]
+                    which requires \(d \ge \kappa \mu_e\). Intuitively, one cannot demand a 1-hop guarantee at a physical scale smaller than one permissible edge.
+                </p>
+
+                <p class="mt-4">
+                    <strong>Policy-instantiated edge opportunities.</strong>
+                    For each time \(t\), let \(\Omega_{P,\le t}\) denote the cumulative set of edge opportunities actually surfaced by policy \(P\) up to time \(t\). Concretely, at each update this contributes exactly one pair:
                 </p>
                 <ol class="list-decimal pl-6 mb-4 space-y-1">
-                <li>
-                    Correctly accepts a revisit and retrieves a previously mapped node \(v_j\) corresponding to the true place being revisited (within the physical tolerance used by the evaluation), and adds an edge from the current node \(v_i\) to \(v_j\).
-                </li>
-                <li>
-                    Correctly rejects all prior nodes in a novel region, creates a new node, and connects it to the previous node by a consecutive edge.
-                </li>
+                    <li>the accepted revisit pair in the correct-accept case, or</li>
+                    <li>the consecutive exploration pair in the correct-reject case.</li>
+                </ol>
+
+                <p class="mt-4">
+                    <strong>Correct localization at every timestep</strong> means that at each update the system does exactly one of the following:
+                </p>
+                <ol class="list-decimal pl-6 mb-4 space-y-1">
+                    <li>
+                        <strong>Correct accept (revisit):</strong> it correctly identifies a previously mapped place and realizes the surfaced revisit opportunity by adding the corresponding revisit edge.
+                    </li>
+                    <li>
+                        <strong>Correct reject (novel region):</strong> it correctly rejects all prior nodes in a novel region, creates a new node, and realizes the surfaced exploration opportunity by adding the consecutive edge from the previous node to the new node.
+                    </li>
                 </ol>
 
                 <div class="bg-gray-50 p-4 rounded-md border-l-4 border-blue-500 my-6">
-                <h3 class="text-lg font-bold text-gray-900 mb-1">Theorem</h3>
-                <p class="italic">
-                    If a topological mapping system makes correct localization decisions at every timestep \(t\), then for all \(t \ge 0\), the resulting map \(\mathcal{G}_t\) satisfies Edge Precision and Policy-conditioned Edge Recall at scale \((n,d)\).
-                </p>
+                    <h3 class="text-lg font-bold text-gray-900 mb-1">Theorem</h3>
+                    <p class="italic">
+                        Assume the additive update rule, edge-length regularity, and correct localization at every timestep.
+                        Let \(n \ge 1\) satisfy \(n\kappa\mu_e \le d\).
+                        Then for every \(t \ge 0\), the graph \(\mathcal{G}_t\) satisfies:
+                    </p>
+                    <p>
+                        \[
+                            \text{(Edge Precision)} \qquad
+                            \mathrm{dist}_{\mathcal{G}_t}(u,v) \le n
+                            \;\Longrightarrow\;
+                            \mathrm{dist}_R(u,v) \le d,
+                        \]
+                    </p>
+                    <p>
+                        \[
+                            \text{(Policy-conditioned Edge Recall)} \qquad
+                            (u,v)\in \Omega_{P,\le t}
+                            \text{ and }
+                            \mathrm{dist}_R(u,v)\le d
+                            \;\Longrightarrow\;
+                            \mathrm{dist}_{\mathcal{G}_t}(u,v)\le n.
+                        \]
+                    </p>
                 </div>
 
-                <h3 class="text-xl font-semibold mt-6 mb-2">Proof by Mathematical Induction</h3>
+                <h3 class="text-xl font-semibold mt-6 mb-2">Proof</h3>
 
                 <p>
-                <strong>Lemma (Hop-to-route bound):</strong>
-                For any nodes \(u,v\) in a graph whose edges all satisfy \(\mathrm{dist}_R(\cdot,\cdot)\le \kappa\mu_e\), if \(\mathrm{dist}_G(u,v)\le n\) then \(\mathrm{dist}_R(u,v)\le d\).
-                <br />
-                <strong>Proof:</strong> Let \(u=v_0, v_1, \dots, v_\ell=v\) be a shortest hop path with \(\ell \le n\). By edge-length regularity, \(\mathrm{dist}_R(v_{i-1},v_i)\le \kappa\mu_e\) for all \(i\). Concatenating these traversable routes yields a feasible route from \(u\) to \(v\) of length at most \(\sum_{i=1}^{\ell} \mathrm{dist}_R(v_{i-1},v_i) \le \ell \kappa\mu_e \le n\kappa\mu_e \le d\). Since \(\mathrm{dist}_R(u,v)\) is the shortest such route distance, \(\mathrm{dist}_R(u,v)\le d\). \(\square\)
-                </p>
-
-                <p>
-                <strong>Base Case (\(t=0\)):</strong>
-                <br />
-                At \(t=0\), the graph \(\mathcal{G}_0\) is either empty or contains a single node. There are no edges, and the maximum hop distance is 0. Both Edge Precision and Policy-conditioned Edge Recall hold vacuously.
+                    <strong>Lemma (Hop-to-route bound):</strong>
+                    Suppose every edge in a graph \(H\) satisfies \(\mathrm{dist}_R(x,y)\le \kappa\mu_e\).
+                    If \(\mathrm{dist}_{H}(u,v)\le n\), then \(\mathrm{dist}_R(u,v)\le d\).
+                    <br />
+                    <strong>Proof:</strong>
+                    Let \(u=v_0, v_1, \dots, v_\ell=v\) be a shortest hop path in \(H\), so \(\ell \le n\).
+                    By edge-length regularity,
+                    \[
+                        \mathrm{dist}_R(v_{i-1}, v_i) \le \kappa\mu_e
+                        \qquad \text{for all } i=1,\dots,\ell.
+                    \]
+                    Concatenating these traversable routes yields a feasible route from \(u\) to \(v\) of length at most
+                    \[
+                        \sum_{i=1}^{\ell}\mathrm{dist}_R(v_{i-1}, v_i)
+                        \le \ell \kappa\mu_e
+                        \le n\kappa\mu_e
+                        \le d.
+                    \]
+                    Since \(\mathrm{dist}_R(u,v)\) is the shortest such route distance, it follows that
+                    \[
+                        \mathrm{dist}_R(u,v)\le d.
+                    \]
+                    \(\square\)
                 </p>
 
                 <p class="mt-4">
-                <strong>Inductive Hypothesis:</strong>
-                <br />
-                Assume that at time \(t\), the graph \(\mathcal{G}_t\) satisfies both Edge Precision and Policy-conditioned Edge Recall at scale \((n, d)\).
+                    <strong>Edge Precision:</strong>
+                    Fix any \(t \ge 0\) and any \(u,v \in \mathcal{V}_t\) with
+                    \(\mathrm{dist}_{\mathcal{G}_t}(u,v)\le n\).
+                    Every edge in \(\mathcal{G}_t\) satisfies \(\mathrm{dist}_R(\cdot,\cdot)\le \kappa\mu_e\), so the lemma applies directly and gives
+                    \[
+                        \mathrm{dist}_R(u,v)\le d.
+                    \]
+                    Since \(t\) was arbitrary, Edge Precision holds for all \(t\ge 0\).
                 </p>
 
                 <p class="mt-4">
-                <strong>Inductive Step (\(t \rightarrow t+1\)):</strong>
-                <br />
-                At time \(t+1\), the system receives a new observation \(z_{t+1}\) and updates the graph according to policy \(P\). By edge-length regularity, any new edge added at time \(t+1\) has route length at most \(\kappa\mu_e\). Because the system maintains correct localization, there are exactly two possible outcomes:
+                    <strong>Policy-conditioned Edge Recall:</strong>
+                    We prove this by induction on \(t\).
+                </p>
+
+                <p class="mt-4">
+                    <strong>Base Case (\(t=0\)):</strong>
+                    <br />
+                    At \(t=0\), the graph is empty or contains only the initial node. There are no nontrivial policy-instantiated edge opportunities, so the recall statement is vacuous.
+                </p>
+
+                <p class="mt-4">
+                    <strong>Inductive Hypothesis:</strong>
+                    <br />
+                    Assume that at time \(t\), every pair \((u,v)\in \Omega_{P,\le t}\) with \(\mathrm{dist}_R(u,v)\le d\) satisfies
+                    \[
+                        \mathrm{dist}_{\mathcal{G}_t}(u,v)\le n.
+                    \]
+                </p>
+
+                <p class="mt-4">
+                    <strong>Inductive Step (\(t \rightarrow t+1\)):</strong>
+                    <br />
+                    Consider the update at time \(t+1\). Because localization is correct, exactly one new policy-instantiated opportunity appears, and there are two cases.
                 </p>
 
                 <p class="mt-4 text-gray-900 font-medium">Case 1: Correct Accept (Revisit)</p>
                 <p>
-                The system correctly retrieves a previously mapped node \(v_j \in \mathcal{V}_t\) and adds a new edge \(e_{\text{new}} = (v_i, v_j)\), where \(v_i\) is the current node.
+                    The policy correctly identifies a previously mapped node \(r \in \mathcal{V}_t\) corresponding to the current place, and realizes the surfaced revisit opportunity by adding the revisit edge \((c,r)\), where \(c\) denotes the node representing the current observation at time \(t+1\).
+                    Therefore
+                    \[
+                        \mathrm{dist}_{\mathcal{G}_{t+1}}(c,r)=1\le n.
+                    \]
+                    So the newly instantiated opportunity satisfies the recall condition.
                 </p>
-                <ul class="list-disc pl-6 mb-4 space-y-2">
-                <li>
-                    <em>Edge Precision:</em> Consider any two nodes \(u, v \in \mathcal{V}_{t+1}\) such that \(\mathrm{dist}_G(u, v) \le n\).
-                    <ul class="list-circle pl-6 mt-1">
-                    <li>
-                        Since \(\mathcal{G}_{t+1}\) is formed from \(\mathcal{G}_t\) by adding edges (and no edge in the entire history violates \(\mathrm{dist}_R \le \kappa\mu_e\)), the lemma applies directly to \(\mathcal{G}_{t+1}\). Hence \(\mathrm{dist}_R(u, v) \le d\).
-                    </li>
-                    <li>
-                        Equivalently, one may split into subcases: if a shortest \(u\)-to-\(v\) path does not use \(e_{\text{new}}\), the inductive hypothesis applies; if it uses \(e_{\text{new}}\), then the lemma bounds the route length by \(n\kappa\mu_e \le d\). In both subcases, \(\mathrm{dist}_R(u,v)\le d\).
-                    </li>
-                    </ul>
-                </li>
-                <li>
-                    <em>Policy-conditioned Edge Recall:</em> We must verify that for all policy-eligible pairs \((u, v) \in \Omega_P(d)\) with \(\mathrm{dist}_R(u, v) \le d\), the graph distance satisfies \(\mathrm{dist}_G(u, v) \le n\).
-                    <ul class="list-circle pl-6 mt-1">
-                    <li>
-                        All pairs in \(\Omega_P(d)\) that were already eligible at time \(t\) remain connected within \(\le n\) hops because adding edges cannot increase shortest-path hop distances.
-                    </li>
-                    <li>
-                        The newly instantiated policy-eligible opportunity at time \(t+1\) is the accepted pair \((v_i, v_j)\). Because the algorithm adds \(e_{\text{new}}\), \(\mathrm{dist}_G(v_i, v_j) = 1 \le n\), so recall holds for this new opportunity.
-                    </li>
-                    </ul>
-                </li>
-                </ul>
+                <p>
+                    Now consider any previously instantiated pair \((u,v)\in \Omega_{P,\le t}\).
+                    Because updates are additive, shortest-path hop distances between existing nodes cannot increase:
+                    \[
+                        \mathrm{dist}_{\mathcal{G}_{t+1}}(u,v)\le \mathrm{dist}_{\mathcal{G}_t}(u,v).
+                    \]
+                    By the inductive hypothesis, every old pair with \(\mathrm{dist}_R(u,v)\le d\) already satisfied
+                    \(\mathrm{dist}_{\mathcal{G}_t}(u,v)\le n\), and hence still satisfies
+                    \[
+                        \mathrm{dist}_{\mathcal{G}_{t+1}}(u,v)\le n.
+                    \]
+                    Thus the recall statement holds for all pairs in \(\Omega_{P,\le t+1}\).
+                </p>
 
                 <p class="mt-4 text-gray-900 font-medium">Case 2: Correct Reject (Novel Region)</p>
                 <p>
-                The system correctly identifies the region as unmapped. It initializes a new node \(u \notin \mathcal{V}_t\) and connects it to the previous node \(v_i\) via a new edge \(e_{\text{new}} = (v_i, u)\).
+                    The policy correctly determines that the current place is novel, creates a new node \(u \notin \mathcal{V}_t\), and realizes the surfaced exploration opportunity by adding the consecutive edge \((p,u)\), where \(p\) is the previous node on the trajectory.
+                    Therefore
+                    \[
+                        \mathrm{dist}_{\mathcal{G}_{t+1}}(p,u)=1\le n.
+                    \]
+                    So the newly instantiated opportunity satisfies the recall condition.
                 </p>
-                <ul class="list-disc pl-6 mb-4 space-y-2">
-                <li>
-                    <em>Edge Precision:</em> Consider any \(u', v' \in \mathcal{V}_{t+1}\) with \(\mathrm{dist}_G(u', v') \le n\). As in Case 1, the lemma applies to \(\mathcal{G}_{t+1}\) because all edges (including the new edge) satisfy \(\mathrm{dist}_R \le \kappa\mu_e\). Hence \(\mathrm{dist}_R(u', v') \le d\).
-                </li>
-                <li>
-                    <em>Policy-conditioned Edge Recall:</em> All previously eligible pairs retain \(\le n\)-hop connectivity because hop distances among old nodes do not increase. The only newly instantiated policy-eligible opportunity involving the new node at time \(t+1\) is \((v_i, u)\), and it is directly connected: \(\mathrm{dist}_G(v_i, u) = 1 \le n\).
-                </li>
-                </ul>
+                <p>
+                    As in Case 1, all previously instantiated opportunities remain within \(n\) hops because additive updates cannot increase shortest-path hop distances. Hence the recall statement also holds for all pairs in \(\Omega_{P,\le t+1}\).
+                </p>
+
+                <p class="mt-4">
+                    By induction, Policy-conditioned Edge Recall holds for every \(t\ge 0\). Combining this with the direct Edge Precision argument proves the theorem. \(\blacksquare\)
+                </p>
 
                 <h3 class="text-xl font-semibold mt-6 mb-2">Discussion: Effect of Non-zero Localization Error</h3>
 
                 <p>
-                The theorem above should be interpreted as an <em>idealized invariance result</em>: if localization decisions are always correct, then the map maintains Edge Precision and Policy-conditioned Edge Recall as it grows. In practice, real systems have non-zero error, and thus the conclusion becomes <em>approximate</em> rather than absolute. The proof highlights which failure modes invalidate its assumptions and how they impact map quality.
+                    The theorem above is an <em>idealized invariance result</em>: if localization decisions are always correct, then the map maintains Edge Precision and Policy-conditioned Edge Recall as it grows. In practice, real systems have non-zero error, so the guarantee becomes approximate rather than absolute. The corrected theorem also makes explicit a necessary scale condition: if \(d < \kappa\mu_e\), then no integer \(n \ge 1\) can satisfy \(n\kappa\mu_e \le d\), meaning a 1-hop precision guarantee at scale \(d\) is impossible under the assumed edge model.
                 </p>
 
                 <p class="mt-4">
-                <strong>Which assumption fails under error?</strong> The induction relies on the edge-length regularity condition that every added edge remains physically local (bounded by \(\kappa\mu_e\)). Consecutive edges created during exploration typically satisfy this automatically. However, an incorrect <em>accept</em> decision (a false loop closure) can add a shortcut edge between physically distant places, violating the bound. Once such a long-range spurious edge exists, the Hop-to-route lemma no longer applies, and Edge Precision can be broken immediately, since a 1-hop connection may exceed the route threshold \(d\).
+                    <strong>Scale admissibility and interpretation.</strong>
+                    The theorem makes explicit that the surrogate relationship is scale-dependent: it holds only for hop and route thresholds \((n,d)\) satisfying \(n\kappa\mu_e \le d\). This is not merely a technical artifact, but reflects the intrinsic spatial resolution of the graph induced by the mapping policy. If one edge may span up to \(\kappa\mu_e\) route distance, then no 1-hop guarantee can certify physical precision below that scale. Thus, localization accuracy implies map consistency only at evaluation scales that are compatible with the graph’s edge-length model.
                 </p>
 
                 <p class="mt-4">
-                <strong>Error asymmetry: false accept vs. false reject.</strong> Not all localization errors have the same structural consequences.
-                <em>False accepts</em> are catastrophic: they can introduce an incorrect shortcut that collapses hop distances between distant regions, corrupting the graph and potentially causing cascading failures in later updates.
-                In contrast, <em>false rejects</em> (missed revisits) usually create duplicate nodes connected by local consecutive edges; this tends to preserve Edge Precision but harms Policy-conditioned Edge Recall by missing policy-eligible revisit opportunities, leading to map fragmentation and reduced planning efficiency.
+                    <strong>Which assumption fails under error?</strong>
+                    The key structural requirement is that every added edge remains physically local, i.e.,
+                    \(\mathrm{dist}_R(x,y)\le \kappa\mu_e\).
+                    Consecutive edges created during exploration typically satisfy this automatically. However, an incorrect <em>accept</em> decision (a false loop closure) can add a shortcut edge between physically distant places, violating this bound. Once such a long-range spurious edge exists, the Hop-to-route lemma no longer applies, and Edge Precision can fail immediately, since even a 1-hop connection may exceed the threshold \(d\).
                 </p>
 
                 <p class="mt-4">
-                <strong>Implication for the surrogate relationship.</strong> Localization accuracy remains an informative surrogate for map success, but it is necessary to distinguish <em>where</em> the errors occur. In particular, the key requirement for preserving the theorem’s guarantees is the absence of catastrophic false accepts that violate edge-length regularity. This motivates our ambiguity-aware evaluation (A+P, P.O., A.O.): A.O. cases directly measure the propensity to incorrectly accept in novel regions, which is precisely the failure mode that can break the proof assumptions and corrupt the map. Conversely, high P.O. and A+P performance reflects the ability to correctly accept revisits without sacrificing safety.
+                    <strong>Error asymmetry: false accept vs. false reject.</strong>
+                    Not all localization errors have the same structural consequences.
+                    <em>False accepts</em> are catastrophic: they can introduce an incorrect shortcut that collapses hop distances between distant regions, corrupting the graph and potentially causing cascading failures in later updates.
+                    In contrast, <em>false rejects</em> (missed revisits) usually create duplicate nodes connected only by local consecutive edges; this tends to preserve Edge Precision but harms Policy-conditioned Edge Recall by failing to realize valid revisit opportunities, leading to fragmentation and reduced planning efficiency.
                 </p>
 
                 <p class="mt-4">
-                <strong>Practical extension via edge gating.</strong> The invariance argument can be extended beyond the zero-error setting if the system enforces a physical consistency gate on accepted shortcut edges. If every accepted edge \((v_i,v_j)\) is required to satisfy
-                \[
-                    \mathrm{dist}_R(v_i,v_j)\le \kappa\mu_e
-                \]
-                (e.g., via odometry-based gating, temporal consistency checks, or multi-view verification), then the Hop-to-route lemma continues to hold and Edge Precision is preserved even with non-zero retrieval noise. Under such gating, residual errors primarily manifest as conservative rejects, which degrade recall but do not catastrophically corrupt the map.
+                    <strong>Implication for the surrogate relationship.</strong>
+                    Localization accuracy remains an informative surrogate for map success, but the corrected proof clarifies that the most damaging failure mode is specifically the introduction of non-local shortcut edges. This motivates ambiguity-aware evaluation (A+P, P.O., A.O.): A.O. cases directly probe the tendency to incorrectly accept in novel regions, which is precisely the error mode that can violate edge-length regularity and break the theorem’s assumptions. Conversely, strong A+P and P.O. performance reflects the ability to correctly realize revisit opportunities without sacrificing structural safety.
                 </p>
 
+                <p class="mt-4">
+                    <strong>Practical extension via edge gating.</strong>
+                    The argument can be extended beyond the zero-error setting if the system enforces a physical consistency gate on accepted shortcut edges. If every accepted edge \((x,y)\) is required to satisfy
+                    \[
+                        \mathrm{dist}_R(x,y)\le \kappa\mu_e,
+                    \]
+                    for example via odometry-based gating, temporal consistency checks, or multi-view geometric verification, then the Hop-to-route lemma continues to hold and Edge Precision is preserved even with non-zero retrieval noise. Under such gating, residual errors primarily manifest as conservative rejects, which degrade recall but do not catastrophically corrupt the map.
+                </p>
 
                 <p class="mt-6 font-semibold">Conclusion:</p>
                 <p>
-                In both cases, Edge Precision and Policy-conditioned Edge Recall are preserved when passing from \(\mathcal{G}_t\) to \(\mathcal{G}_{t+1}\). Therefore, by mathematical induction, if localization decisions are correct at every timestep, the resulting map satisfies the two topological consistency properties for all \(t \ge 0\). \(\blacksquare\)
+                    Under additive graph growth, edge-length regularity, and correct localization at every timestep, the evolving graph satisfies Edge Precision and Policy-conditioned Edge Recall at any scale \((n,d)\) for which \(n\kappa\mu_e \le d\). The proof also clarifies why catastrophic false accepts are the critical failure mode in practice: they are precisely what can violate the locality condition needed for the guarantee.
                 </p>
             </div>
         </section>
